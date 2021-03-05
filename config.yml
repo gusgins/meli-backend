@@ -1,0 +1,8 @@
+database:
+    dbhost: localhost
+    dbport: 3306
+    dbname: test_go
+    dbuser: root
+    dbpassword: 
+api:
+    apiport: 8080

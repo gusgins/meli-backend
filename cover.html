@@ -1,0 +1,338 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>service: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/gusgins/meli-backend/service/dna_checker.go (100.0%)</option>
+				
+				<option value="file1">github.com/gusgins/meli-backend/service/service.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package service
+
+type estado struct {
+        genes          []byte
+        genesRepetidos []int
+        mutaciones     int
+        mutante        bool
+}
+
+func isMutant(dna []string) bool <span class="cov8" title="1">{
+        return isMutantV1(len(dna), dna)
+}</span>
+func isMutantV1(size int, dna []string) bool <span class="cov8" title="1">{
+        /*
+                N° - Chequea
+                0  - O(1): Diagonal Principal
+                        [0][ ][ ][ ][ ][ ]
+                        [ ][0][ ][ ][ ][ ]
+                        [ ][ ][0][ ][ ][ ]
+                        [ ][ ][ ][0][ ][ ]
+                        [ ][ ][ ][ ][0][ ]
+                        [ ][ ][ ][ ][ ][0]
+                1  - O(1): Diagonal Inversa
+                        [ ][ ][ ][ ][ ][1]
+                        [ ][ ][ ][ ][1][ ]
+                        [ ][ ][ ][1][ ][ ]
+                        [ ][ ][1][ ][ ][ ]
+                        [ ][1][ ][ ][ ][ ]
+                        [1][ ][ ][ ][ ][ ]
+                2  - O(N): Filas
+                        [2][2][2][2][2][2]    [ ][ ][ ][ ][ ][ ]
+                        [ ][ ][ ][ ][ ][ ]    [2][2][2][2][2][2]
+                        [ ][ ][ ][ ][ ][ ] =&gt; [ ][ ][ ][ ][ ][ ]
+                        [ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
+                        [ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
+                        [ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
+                3  - O(N): Columnas
+                        [3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
+                        [3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
+                        [3][ ][ ][ ][ ][ ] =&gt; [ ][3][ ][ ][ ][ ]
+                        [3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
+                        [3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
+                        [3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
+                4  - O(N-4): Diagonales superiores a principal
+                        [ ][4][ ][ ][ ][ ]    [ ][ ][4][ ][ ][ ]
+                        [ ][ ][4][ ][ ][ ]    [ ][ ][ ][4][ ][ ]
+                        [ ][ ][ ][4][ ][ ] =&gt; [ ][ ][ ][ ][4][ ]
+                        [ ][ ][ ][ ][4][ ]    [ ][ ][ ][ ][ ][4]
+                        [ ][ ][ ][ ][ ][4]    [ ][ ][ ][ ][ ][ ]
+                        [ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
+                5  - O(N-4): Diagonales inferiores a principal
+                        [ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
+                        [5][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
+                        [ ][5][ ][ ][ ][ ] =&gt; [5][ ][ ][ ][ ][ ]
+                        [ ][ ][5][ ][ ][ ]    [ ][5][ ][ ][ ][ ]
+                        [ ][ ][ ][5][ ][ ]    [ ][ ][5][ ][ ][ ]
+                        [ ][ ][ ][ ][5][ ]    [ ][ ][ ][5][ ][ ]
+                6  - O(N-4): Diagonales superiores a inversa
+                        [ ][ ][ ][ ][6][ ]    [ ][ ][ ][6][ ][ ]
+                        [ ][ ][ ][6][ ][ ]    [ ][ ][6][ ][ ][ ]
+                        [ ][ ][6][ ][ ][ ] =&gt; [ ][6][ ][ ][ ][ ]
+                        [ ][6][ ][ ][ ][ ]    [6][ ][ ][ ][ ][ ]
+                        [6][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
+                        [ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
+                7  - O(N-4): Diagonales inferiores a inversa
+                        [ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
+                        [ ][ ][ ][ ][ ][7]    [ ][ ][ ][ ][ ][ ]
+                        [ ][ ][ ][ ][7][ ] =&gt; [ ][ ][ ][ ][ ][7]
+                        [ ][ ][ ][7][ ][ ]    [ ][ ][ ][ ][7][ ]
+                        [ ][ ][7][ ][ ][ ]    [ ][ ][ ][7][ ][ ]
+                        [ ][7][ ][ ][ ][ ]    [ ][ ][7][ ][ ][ ]
+        */
+        e := estado{
+                genes:          make([]byte, 8),
+                genesRepetidos: make([]int, 8),
+                mutaciones:     0,
+        }
+        e.genes[0] = ' '
+        e.genes[1] = ' '
+        for i := 0; i &lt; size; i++ </span><span class="cov8" title="1">{
+                e.checkGene(0, dna[i][i])
+                if e.mutante </span><span class="cov8" title="1">{
+                        return true
+                }</span>
+                <span class="cov8" title="1">e.checkGene(1, dna[i][size-1-i])
+                if e.mutante </span><span class="cov8" title="1">{
+                        return true
+                }</span>
+                <span class="cov8" title="1">e.genes[2] = ' '
+                e.genes[3] = ' '
+                for j := 0; j &lt; size; j++ </span><span class="cov8" title="1">{
+                        e.checkGene(2, dna[i][j])
+                        if e.mutante </span><span class="cov8" title="1">{
+                                return true
+                        }</span>
+                        <span class="cov8" title="1">e.checkGene(3, dna[j][i])
+                        if e.mutante </span><span class="cov8" title="1">{
+                                return true
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">for i := 1; i &lt; size-4; i++ </span><span class="cov8" title="1">{
+                e.genes[4] = ' '
+                e.genes[5] = ' '
+                e.genes[6] = ' '
+                e.genes[7] = ' '
+                for j := i; j &lt; size; j++ </span><span class="cov8" title="1">{
+                        e.checkGene(4, dna[j-1][j])
+                        if e.mutante </span><span class="cov8" title="1">{
+                                return true
+                        }</span>
+                        <span class="cov8" title="1">e.checkGene(5, dna[j][j-i])
+                        if e.mutante </span><span class="cov8" title="1">{
+                                return true
+                        }</span>
+                        <span class="cov8" title="1">e.checkGene(6, dna[j-1][(size-1)-(j)])
+                        if e.mutante </span><span class="cov8" title="1">{
+                                return true
+                        }</span>
+                        <span class="cov8" title="1">e.checkGene(7, dna[j][(size-1)-(j-i)])
+                        if e.mutante </span><span class="cov8" title="1">{
+                                return true
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">return false</span>
+}
+
+func (e *estado) checkGene(gene int, dnaGene byte) <span class="cov8" title="1">{
+        if e.genes[gene] != dnaGene </span><span class="cov8" title="1">{
+                e.genes[gene] = dnaGene
+                e.genesRepetidos[gene] = 0
+        }</span>
+        <span class="cov8" title="1">e.genesRepetidos[gene]++
+        if e.genesRepetidos[gene] &gt;= 4 </span><span class="cov8" title="1">{
+                e.mutaciones++
+                e.genesRepetidos[gene] = 0
+        }</span>
+        <span class="cov8" title="1">if e.mutaciones &gt; 1 </span><span class="cov8" title="1">{
+                e.mutante = true
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package service
+
+import (
+        "strings"
+
+        "github.com/gin-gonic/gin"
+        "github.com/gusgins/meli-backend/config"
+)
+
+// Service exported
+type Service struct {
+        Config config.Configuration
+}
+
+// NewService creates service with config
+func NewService(config config.Configuration) Service <span class="cov8" title="1">{
+        service := Service{config}
+        return service
+}</span>
+
+// PostMutant returns
+func (s Service) PostMutant(c *gin.Context) <span class="cov8" title="1">{
+
+        var registry Registry
+        if err := c.BindJSON(&amp;registry); err != nil </span><span class="cov8" title="1">{
+                c.JSON(400, gin.H{"error": "invalid request: " + err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">if err := registry.validate(); err != nil </span><span class="cov8" title="1">{
+                c.JSON(400, gin.H{"error": "invalid request: " + err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">if registry.isMutant() </span><span class="cov8" title="1">{
+                c.JSON(200, gin.H{"status": "authorized"})
+        }</span> else<span class="cov8" title="1"> {
+                c.JSON(403, gin.H{"error": "unauthorized"})
+        }</span>
+}
+
+// Registry to check if it's mutant
+type Registry struct {
+        Dna  []string `json:"dna"`
+        size int
+        code uint64
+}
+
+// New Creates Registry from dna
+func (r *Registry) validate() error <span class="cov8" title="1">{
+        r.size = len(r.Dna)
+        values := map[rune]string{'A': "0", 'T': "1", 'C': "2", 'G': "3"}
+        v := ""
+        size := len(r.Dna)
+        for _, s := range r.Dna </span><span class="cov8" title="1">{
+                if len(s) != size </span><span class="cov8" title="1">{
+                        return RegistryError{Err: "Invalid matrix size"}
+                }</span>
+                <span class="cov8" title="1">for _, c := range s </span><span class="cov8" title="1">{
+                        v += values[c]
+                }</span>
+        }
+        <span class="cov8" title="1">r.code = decode(v, "0123")
+        return nil</span>
+}
+
+func (r Registry) isMutant() bool <span class="cov8" title="1">{
+        return isMutantV1(r.size, r.Dna)
+}</span>
+
+// decode Converts enc into base len(base) int
+func decode(enc, base string) uint64 <span class="cov8" title="1">{
+        var nb uint64
+        lbase := len(base)
+        le := len(enc)
+        for i := 0; i &lt; le; i++ </span><span class="cov8" title="1">{
+                mult := 1
+                for j := 0; j &lt; le-i-1; j++ </span><span class="cov8" title="1">{
+                        mult *= lbase
+                }</span>
+                <span class="cov8" title="1">nb += uint64(strings.IndexByte(base, enc[i]) * mult)</span>
+        }
+        <span class="cov8" title="1">return nb</span>
+}
+
+// RegistryError for invalid registry
+type RegistryError struct {
+        Err string
+}
+
+func (r RegistryError) Error() string <span class="cov8" title="1">{ return r.Err }</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
