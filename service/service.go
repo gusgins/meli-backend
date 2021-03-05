@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -48,17 +49,21 @@ type Registry struct {
 func (r *Registry) validate() error {
 	r.size = len(r.Dna)
 	values := map[rune]string{'A': "0", 'T': "1", 'C': "2", 'G': "3"}
-	v := ""
+	code := ""
 	size := len(r.Dna)
-	for _, s := range r.Dna {
+	for i, s := range r.Dna {
 		if len(s) != size {
-			return RegistryError{Err: "Invalid matrix size"}
+			return RegistryError{Err: "invalid matrix size"}
 		}
-		for _, c := range s {
-			v += values[c]
+		for j, c := range s {
+			if val, found := values[c]; found {
+				code += val
+			} else {
+				return RegistryError{Err: fmt.Sprintf("invalid character %s at [%d][%d]", string(c), i, j)}
+			}
 		}
 	}
-	r.code = decode(v, "0123")
+	r.code = decode(code, "0123")
 	return nil
 }
 

@@ -32,7 +32,9 @@ func TestPostMutant(t *testing.T) {
 	// JSON Inválido
 	runTest(t, c, r, `{"dna":"ATT","TATT","AATA","ATAA"]}`, http.StatusBadRequest, "error", "invalid request: invalid character ',' after object key")
 	// Matriz de tamaños no válidos
-	runTest(t, c, r, `{"dna":["AAAA","AAAA","AAAA","AAA"]}`, http.StatusBadRequest, "error", "invalid request: Invalid matrix size")
+	runTest(t, c, r, `{"dna":["AAAA","AAAA","AAAA","AAA"]}`, http.StatusBadRequest, "error", "invalid request: invalid matrix size")
+	// Matriz con caracter no válido
+	runTest(t, c, r, `{"dna":["AABA","AAAA","AAAA","AAA"]}`, http.StatusBadRequest, "error", "invalid request: invalid character B at [0][2]")
 	// No mutante (Consigna)
 	runTest(t, c, r, `{"dna":["ATGCGA","CAGTGC","TTATTT","AGACGG","GCGTCA","TCACTG"]}`, http.StatusForbidden, "error", "unauthorized")
 	// Mutante (Consigna)
