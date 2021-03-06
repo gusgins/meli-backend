@@ -1,37 +1,44 @@
 version: '3'
 services:
-  app:
-    container_name: meli-backend-api
-    build: .
+  meli-backend-app:
+    container_name: meli-backend-app
+    build: . # build from Dockerfile
     ports: 
       - 8080:8080 # Forward the exposed port 8080 on the container to port 8080 on the host machine
     restart: on-failure
     volumes:
-      - ./docker/volumes/api:/usr/src/app/
+      - api:/usr/src/app/
     depends_on:
-      - mysql
+      - meli-backend-mysql
     networks:
-      - magneto
+      - meli-backend-magneto
 
-  mysql:
+  meli-backend-mysql:
     container_name: meli-backend-mysql
     image: mysql:8.0 #5.6 because of issue https://github.com/docker-library/mysql/issues/69
     ports: 
-      - 3307:3306
+      - 33060:3306 # Use port 33060 to avoid conflict with running mysql-server
     environment: 
-      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_ROOT_HOST=${DB_HOST} 
       - MYSQL_USER=${DB_USER}
       - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
       - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
-      - DATABASE_HOST=${DB_HOST} 
+#      - DATABASE_HOST=${DB_HOST} 
     volumes:
-      - ./docker/volumes/mysql:/var/lib/mysql
+      - db_mysql:/var/lib/mysql
 #      - ./docker/init/mysql:/docker-entrypoint-initdb.d/:ro
     command: --innodb-use-native-aio=0
     networks:
-      - magneto
+      - meli-backend-magneto
 
 # Networks to be created to facilitate communication between containers
+volumes: 
+  api:
+  db_mysql:
+  
 networks:
-  magneto:
+  meli-backend-magneto:
+    driver: bridge
 
+  
