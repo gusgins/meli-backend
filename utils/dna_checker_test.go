@@ -580,17 +580,16 @@ func BenchmarkIsMutant(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		IsMutant(len(dnas[i]), dnas[i])
 		/*
 			fmt.Print("DNA: ")
 			fmt.Print(dnas[i])
 			fmt.Print(" - Longitud: ")
 			fmt.Println(len(dnas[i]))
-		*/
-		isMutant(dnas[i])
-		/*
-			if es_mutante {
+			esMutante := IsMutant(len(dnas[i]), dnas[i])
+			if esMutante {
 				fmt.Println("Es mutante")
-			}else{
+			} else {
 				fmt.Println("No es mutante")
 			}
 		*/

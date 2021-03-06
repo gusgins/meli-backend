@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
 	"time"
 
 	// Mysql Driver
@@ -40,6 +41,26 @@ func (s *mySQLStorage) Store(r model.Registry) error {
 		return StorageError{Err: "Not Found"}
 	}
 	return nil
+}
+
+func (s *mySQLStorage) GetStats() (model.Stats, error) {
+	query := s.executeSQL("SELECT COUNT(NULLIF(mutant,0)) mutants, COUNT(NULLIF(mutant,1)) humans FROM registry;", []interface{}{})
+	stats := model.Stats{}
+	if len(query) == 0 {
+		return stats, StorageError{Err: "Not Found"}
+	}
+	row := query[0].(map[string]interface{})
+	var err error = nil
+	stats.Mutants, err = strconv.Atoi(row["mutants"].(string))
+	if err != nil {
+		return stats, err
+	}
+	stats.Humans, err = strconv.Atoi(row["humans"].(string))
+	if err != nil {
+		return stats, err
+	}
+
+	return stats, nil
 }
 
 func (s *mySQLStorage) initDatabase() {

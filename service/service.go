@@ -50,3 +50,18 @@ func (s Service) PostMutant(c *gin.Context) {
 		c.JSON(403, gin.H{"error": "unauthorized"})
 	}
 }
+
+// GetStats returns db stats
+func (s Service) GetStats(c *gin.Context) {
+
+	stats, err := s.Storage.GetStats()
+	if err != nil {
+		c.JSON(403, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{
+		"count_mutant_dna": stats.Mutants,
+		"count_human_dna":  stats.Humans,
+		"ratio":            stats.GetRatio(),
+	})
+}

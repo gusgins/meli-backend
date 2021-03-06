@@ -21,5 +21,6 @@ func main() {
 func SetupRouter(config config.Configuration, service service.Service) *gin.Engine {
 	r := gin.Default()
 	r.POST("/mutant", service.PostMutant)
+	r.GET("/stats", service.GetStats)
 	return r
 }
