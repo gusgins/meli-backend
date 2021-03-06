@@ -6,7 +6,7 @@ type Stats struct {
 	Humans  int
 }
 
-// Ratio returns Stats' Mutant/Human ratio
+// GetRatio returns Stats' Mutant/Human ratio
 func (s *Stats) GetRatio() float64 {
 	if s.Humans == 0 {
 		return 0
