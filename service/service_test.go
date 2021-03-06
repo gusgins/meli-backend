@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gusgins/meli-backend/config"
+	"github.com/gusgins/meli-backend/storage"
 )
 
 func performRequest(r http.Handler, method, path string) *httptest.ResponseRecorder {
@@ -24,32 +25,39 @@ func TestPostMutant(t *testing.T) {
 		API: config.APIConfiguration{
 			APIPort: 8080,
 		},
-		Database: config.DatabaseConfiguration{},
+		Database: config.DatabaseConfiguration{
+			DBHost:     "localhost",
+			DBPort:     3306,
+			DBName:     "meli_backend",
+			DBUser:     "root",
+			DBPassword: "password",
+		},
 	}
-	service := NewService(config)
+	storage := storage.NewMySQLStorage(config)
+	service := NewService(config, storage)
 	c, r := gin.CreateTestContext(httptest.NewRecorder())
 	r.POST("/mutant", service.PostMutant)
-	// JSON Inválido
+	// Invalid JSON
 	runTest(t, c, r, `{"dna":"ATT","TATT","AATA","ATAA"]}`, http.StatusBadRequest, "error", "invalid request: invalid character ',' after object key")
-	// Matriz de tamaños no válidos
+	// Invalid array size
 	runTest(t, c, r, `{"dna":["AAAA","AAAA","AAAA","AAA"]}`, http.StatusBadRequest, "error", "invalid request: invalid matrix size")
-	// Matriz con caracter no válido
+	// Invalid character
 	runTest(t, c, r, `{"dna":["AABA","AAAA","AAAA","AAA"]}`, http.StatusBadRequest, "error", "invalid request: invalid character B at [0][2]")
-	// No mutante (Consigna)
+	// Not mutant (Exercise)
 	runTest(t, c, r, `{"dna":["ATGCGA","CAGTGC","TTATTT","AGACGG","GCGTCA","TCACTG"]}`, http.StatusForbidden, "error", "unauthorized")
-	// Mutante (Consigna)
+	// Mutant (Exercise)
 	runTest(t, c, r, `{"dna":["ATGCGA","CAGTGC","TTATGT","AGAAGG","CCCCTA","TCACTG"]}`, http.StatusOK, "status", "authorized")
-	// Mutante
+	// Mutant
 	runTest(t, c, r, `{"dna":["AAAA","AAAA","AAAA","AAAA"]}`, http.StatusOK, "status", "authorized")
-	// Mutante por diagonal principal (0)
+	// Mutant by Major Diagonal (0)
 	runTest(t, c, r, `{"dna":["AAAA","TAAA","ATAT","AATA"]}`, http.StatusOK, "status", "authorized")
-	// Mutante por diagonal superior a principal (4)
+	// Mutant by Above Major Diagonal (4)
 	runTest(t, c, r, `{"dna":["TAGCGA","GCATGC","TTTAGT","GAGAAG","ACCCCT","TCACTG"]}`, http.StatusOK, "status", "authorized")
-	// Mutante por diagonal superior a inversa (6)
+	// Mutant by Above Minor Diagonal (6)
 	runTest(t, c, r, `{"dna":["AGCGAT","CGTACG","TGATTT","GAAGAG","TCCCCA","GTCACT"]}`, http.StatusOK, "status", "authorized")
-	// Mutante por diagonal inferior a inversa (7)
+	// Mutant by Below Minor Diagonal (7)
 	runTest(t, c, r, `{"dna":["AGCGTT","CGTACC","TGATCT","GAACAG","TCCCCA","GCCACT"]}`, http.StatusOK, "status", "authorized")
-	// No mutante
+	// Not mutant
 	runTest(t, c, r, `{"dna":["ATTT","TATT","AATA","ATAA"]}`, http.StatusForbidden, "error", "unauthorized")
 }
 

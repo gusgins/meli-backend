@@ -1,4 +1,4 @@
-package service
+package utils
 
 type estado struct {
 	genes          []byte
@@ -11,7 +11,7 @@ func isMutant(dna []string) bool {
 	return IsMutant(len(dna), dna)
 }
 
-// IsMutant find if dna of size {size} is mutant
+// IsMutant find if dna of size is mutant
 //
 // N° - Checks
 //

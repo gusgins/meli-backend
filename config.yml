@@ -1,8 +1,8 @@
 database:
     dbhost: localhost
     dbport: 3306
-    dbname: test_go
+    dbname: meli_backend
     dbuser: root
-    dbpassword: 
+    dbpassword: password
 api:
     apiport: 8080

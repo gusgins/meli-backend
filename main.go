@@ -6,11 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gusgins/meli-backend/config"
 	"github.com/gusgins/meli-backend/service"
+	"github.com/gusgins/meli-backend/storage"
 )
 
 func main() {
 	config := config.NewConfig()
-	service := service.NewService(config)
+	storage := storage.NewMySQLStorage(config)
+	service := service.NewService(config, storage)
 	r := SetupRouter(config, service)
 	r.Run(fmt.Sprintf(":%d", config.API.APIPort)) // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }

@@ -1,4 +1,4 @@
-package service
+package utils
 
 import (
 	"math/rand"
@@ -563,11 +563,11 @@ func TestIsMutant(t *testing.T) {
 
 func BenchmarkIsMutant(b *testing.B) {
 	genes := []string{"A", "T", "C", "G"}
-	//	rand.Seed(time.Now().UnixNano())
-	rand.Seed(1)
+	// rand.Seed(time.Now().UnixNano()) // Random seed to benchmark with different values every time
+	rand.Seed(1) // Constant seed to benchmark with same values every time
 	dnas := make([][]string, b.N)
 	for i := 0; i < b.N; i++ {
-		size := rand.Intn(7) + 4
+		size := rand.Intn(10) + 4
 		dna := make([]string, size)
 		for j := 0; j < size; j++ {
 			str := ""
