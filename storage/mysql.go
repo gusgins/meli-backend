@@ -3,19 +3,14 @@ package storage
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"time"
 
+	// Mysql Driver
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/gusgins/meli-backend/config"
 	"github.com/gusgins/meli-backend/model"
 )
-
-type Storage interface {
-	Find(model.Registry) (bool, error)
-	Store(model.Registry) error
-}
 
 type mySQLStorage struct {
 	connectionString string
@@ -23,10 +18,11 @@ type mySQLStorage struct {
 
 // NewMySQLStorage Constructor mySQLStorage
 func NewMySQLStorage(c config.Configuration) Storage {
-	var mySQLStorage Storage = &mySQLStorage{
+	mySQLStorage := &mySQLStorage{
 		connectionString: fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8&parseTime=True&loc=Local", c.Database.DBUser, c.Database.DBPassword, c.Database.DBHost, c.Database.DBPort, c.Database.DBName),
 	}
-	return mySQLStorage
+	mySQLStorage.initDatabase()
+	return Storage(mySQLStorage)
 }
 
 func (s *mySQLStorage) Find(r model.Registry) (bool, error) {
@@ -46,21 +42,25 @@ func (s *mySQLStorage) Store(r model.Registry) error {
 	return nil
 }
 
+func (s *mySQLStorage) initDatabase() {
+	s.executeSQL("CREATE TABLE IF NOT EXISTS `registry`(`size` INT UNSIGNED NOT NULL,id VARBINARY(200) NOT NULL,mutant BOOLEAN NOT NULL,PRIMARY KEY (size,id)) ENGINE=MyISAM DEFAULT CHARSET=utf8;", []interface{}{})
+}
+
 func (s *mySQLStorage) executeSQL(queryStr string, args []interface{}) []interface{} {
 	conn, err := sql.Open("mysql", s.connectionString)
 	if err != nil {
-		log.Fatal("Error while opening database connection:", err.Error())
+		//log.Fatal("Error while opening database connection:", err.Error())
 	}
 
 	for err = conn.Ping(); err != nil; err = conn.Ping() {
 		conn, err = sql.Open("mysql", s.connectionString)
-		log.Fatal("Error on Ping to database connection:", err.Error())
+		//log.Fatal("Error on Ping to database connection:", err.Error())
 	}
 	defer conn.Close()
 
 	rows, err := conn.Query(queryStr, args...)
 	if err != nil {
-		log.Fatal("Query failed:", err.Error())
+		//log.Fatal("Query failed:", err.Error())
 	}
 	defer rows.Close()
 
@@ -78,7 +78,7 @@ func (s *mySQLStorage) executeSQL(queryStr string, args []interface{}) []interfa
 			valuePtrs[i] = &values[i]
 		}
 		if err := rows.Scan(valuePtrs...); err != nil {
-			log.Fatal(err)
+			//log.Fatal(err)
 		}
 
 		m := make(map[string]interface{})

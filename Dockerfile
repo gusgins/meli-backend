@@ -4,7 +4,7 @@ FROM golang:alpine as builder
 # ENV GO111MODULE=on
 
 # Add Maintainer info
-LABEL maintainer="Steven Victor <chikodi543@gmail.com>"
+LABEL maintainer="Gustavo Gingins <gusgins@gmail.com>"
 
 # Install git.
 # Git is required for fetching the dependencies.
@@ -36,6 +36,7 @@ WORKDIR /root/
 # Copy the Pre-built binary file from the previous stage
 COPY --from=builder /app/main .
 COPY --from=builder /app/.env .
+COPY --from=builder /app/config.yml .
 
 # Expose port 8080 to the outside world
 EXPOSE 8080

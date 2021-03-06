@@ -1,54 +1,37 @@
 version: '3'
 services:
   app:
-    container_name: full_app
+    container_name: meli-backend-api
     build: .
     ports: 
       - 8080:8080 # Forward the exposed port 8080 on the container to port 8080 on the host machine
     restart: on-failure
     volumes:
-      - api:/usr/src/app/
+      - ./docker/volumes/api:/usr/src/app/
     depends_on:
-      - postgres # This service depends on postgres. Start that first.
-      # - mysql # This service depends on mysql. Start that first.
+      - mysql
     networks:
-      - fullstack
+      - magneto
 
-  postgres:
-    image: postgres:latest
-    container_name: full_db
-    environment:
-      - POSTGRES_USER=${DB_USER}  
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
+  mysql:
+    container_name: meli-backend-mysql
+    image: mysql:8.0 #5.6 because of issue https://github.com/docker-library/mysql/issues/69
+    ports: 
+      - 3307:3306
+    environment: 
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
       - DATABASE_HOST=${DB_HOST} 
-    ports:
-      - '5432:5432'
     volumes:
-      - database_postgres:/var/lib/postgresql/data
+      - ./docker/volumes/mysql:/var/lib/mysql
+#      - ./docker/init/mysql:/docker-entrypoint-initdb.d/:ro
+    command: --innodb-use-native-aio=0
     networks:
-      - fullstack
-
-  # mysql:
-  #   image: mysql:5.7
-  #   ports: 
-  #     - 3306:3306
-  #   environment: 
-  #     - MYSQL_DATABASE=${DB_NAME}
-  #     - MYSQL_USER=${DB_USER}
-  #     - MYSQL_PASSWORD=${DB_PASSWORD}
-  #     - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
-  #     - DATABASE_HOST=${DB_HOST} 
-  #   volumes:
-  #     - database_mysql:/var/lib/postgresql/data
-  #   networks:
-  #     - fullstack
-
-volumes:
-  api:
-  database_postgres:
+      - magneto
 
 # Networks to be created to facilitate communication between containers
 networks:
-  fullstack:
+  magneto:
 

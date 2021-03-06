@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS `registry`(
+    `size` INT UNSIGNED NOT NULL,
+    `id` VARBINARY(200) NOT NULL,
+    `mutant` BOOLEAN NOT NULL,
+    PRIMARY KEY (`size`,`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
