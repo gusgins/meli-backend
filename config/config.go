@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -14,29 +15,29 @@ type Configuration struct {
 
 // APIConfiguration exported
 type APIConfiguration struct {
-	APIPort int
+	Port int
 }
 
 // DatabaseConfiguration exported
 type DatabaseConfiguration struct {
-	DBHost     string
-	DBPort     int
-	DBName     string
-	DBUser     string
-	DBPassword string
+	Host     string
+	Port     int
+	Name     string
+	User     string
+	Password string
 }
 
 // NewConfig returns system configuration
 func NewConfig() Configuration {
-	viper.SetConfigName("config")
 
 	// Set the path to look for the configurations file
 	viper.AddConfigPath(".")
-
+	viper.SetConfigName("config")
+	viper.SetConfigType("yml")
 	// Enable VIPER to read Environment Variables
 	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	viper.SetConfigType("yml")
 	var configuration Configuration
 
 	if err := viper.ReadInConfig(); err != nil {

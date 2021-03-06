@@ -1,10 +1,8 @@
 database:
-    dbhost: meli-backend-mysql
-#    dbhost: localhost
-    dbport: 3306
-    dbname: meli_backend
-    dbuser: meli_backend
-#    dbuser: root
-    dbpassword: password
+    host: localhost
+    port: 3306
+    name: meli_backend
+    user: root
+    password: password
 api:
-    apiport: 8080
+    port: 8080

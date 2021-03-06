@@ -23,14 +23,14 @@ func performRequest(r http.Handler, method, path string) *httptest.ResponseRecor
 func TestPostMutant(t *testing.T) {
 	config := config.Configuration{
 		API: config.APIConfiguration{
-			APIPort: 8080,
+			Port: 8080,
 		},
 		Database: config.DatabaseConfiguration{
-			DBHost:     "localhost",
-			DBPort:     3306,
-			DBName:     "meli_backend",
-			DBUser:     "root",
-			DBPassword: "password",
+			Host:     "localhost",
+			Port:     3306,
+			Name:     "meli_backend",
+			User:     "root",
+			Password: "password",
 		},
 	}
 	storage := storage.NewMySQLStorage(config)

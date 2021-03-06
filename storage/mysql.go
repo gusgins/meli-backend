@@ -19,7 +19,7 @@ type mySQLStorage struct {
 // NewMySQLStorage Constructor mySQLStorage
 func NewMySQLStorage(c config.Configuration) Storage {
 	mySQLStorage := &mySQLStorage{
-		connectionString: fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8&parseTime=True&loc=Local", c.Database.DBUser, c.Database.DBPassword, c.Database.DBHost, c.Database.DBPort, c.Database.DBName),
+		connectionString: fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8&parseTime=True&loc=Local", c.Database.User, c.Database.Password, c.Database.Host, c.Database.Port, c.Database.Name),
 	}
 	mySQLStorage.initDatabase()
 	return Storage(mySQLStorage)

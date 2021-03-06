@@ -14,7 +14,7 @@ func main() {
 	storage := storage.NewMySQLStorage(config)
 	service := service.NewService(config, storage)
 	r := SetupRouter(config, service)
-	r.Run(fmt.Sprintf(":%d", config.API.APIPort)) // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	r.Run(fmt.Sprintf(":%d", config.API.Port)) // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
 
 // SetupRouter sets routes and additional configuration
