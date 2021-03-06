@@ -10,33 +10,37 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 )
 
 const server = "http://localhost:8080"
 
 func main() {
-	// valid gene pool
+	// Valid gene pool
 	genes := []string{"A", "T", "C", "G"}
 
 	// Random seed to generate different values on every execution
 	rand.Seed(time.Now().UnixNano())
-	N := 10
+	// rand.Seed(1) // to test speed difference of postMutants and postMutantsConcurrent
+
+	n := 10
 	// Get ammount of runs from 1st command line argument, default 10 if no argument supplied
 	if len(os.Args) > 1 {
 		var err error
-		N, err = strconv.Atoi(os.Args[1])
+		n, err = strconv.Atoi(os.Args[1])
 		// If any error, default to 10 runs
 		if err != nil {
-			N = 10
+			n = 10
 		}
 	}
 
-	for i := 0; i < N; i++ {
-		dna := buildDna(genes)
-		postMutant(dna)
-	}
 	getStats()
+	start := time.Now()
+	postMutantsConcurrent(genes, n)
+	elapsed := time.Since(start)
+	getStats()
+	fmt.Printf("postMutant(%d) took %s seconds\n", n, elapsed)
 }
 
 func buildDna(genes []string) []string {
@@ -56,7 +60,7 @@ func postMutant(dna []string) {
 	json, _ := json.Marshal(map[string][]string{"dna": dna})
 	response, err := http.Post(server+"/mutant", "application/json", bytes.NewBuffer(json))
 	if err != nil {
-		fmt.Printf("HTTP request failed. Error: %s\n", err.Error())
+		fmt.Printf("HTTP request failed. Error: %s\n", err)
 	} else {
 		data, _ := ioutil.ReadAll(response.Body)
 		_ = data
@@ -68,9 +72,34 @@ func postMutant(dna []string) {
 func getStats() {
 	response, err := http.Get(server + "/stats")
 	if err != nil {
-		fmt.Printf("HTTP request failed. Error: %s\n", err.Error())
+		fmt.Printf("HTTP request failed. Error: %s\n", err)
 	} else {
 		data, _ := ioutil.ReadAll(response.Body)
 		fmt.Println("Stats:", string(data))
+	}
+}
+
+func postMutantsConcurrent(genes []string, n int) {
+	sem := make(chan struct{}, 100)
+	wg := sync.WaitGroup{}
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		select {
+		case sem <- struct{}{}:
+			go func() {
+				postMutant(buildDna(genes))
+				wg.Done()
+			}()
+		default:
+			postMutant(buildDna(genes))
+			wg.Done()
+		}
+	}
+	wg.Wait()
+}
+
+func postMutants(genes []string, n int) {
+	for i := 0; i < n; i++ {
+		postMutant(buildDna(genes))
 	}
 }
