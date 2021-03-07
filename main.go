@@ -2,20 +2,25 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gusgins/meli-backend/config"
+	"github.com/gusgins/meli-backend/repository/mysql"
 	"github.com/gusgins/meli-backend/service"
-	"github.com/gusgins/meli-backend/storage"
 )
 
 func main() {
 	config := config.NewConfig()
-	storage := storage.NewMySQLStorage(config)
-	service := service.NewService(config, storage)
+	repository, err := mysql.NewRepository(config)
+	if err != nil {
+		fmt.Println("Could not connect to repository")
+		os.Exit(1)
+	}
+	defer repository.Close()
+	service := service.NewService(config, repository)
 	r := SetupRouter(config, service)
 	r.Run(fmt.Sprintf(":%d", config.API.Port)) // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
-	storage.Clean()
 }
 
 // SetupRouter sets routes and additional configuration

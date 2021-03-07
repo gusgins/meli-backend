@@ -272,6 +272,33 @@ func TestIsMutant(t *testing.T) {
 		t.Error("isMutant() = true; want false")
 	}
 	got = isMutant([]string{
+		"AACAA",
+		"CAACA",
+		"ACAAC",
+		"AACAA",
+		"AAAGA"})
+	if !got {
+		t.Error("isMutant() = false; want true")
+	}
+	got = isMutant([]string{
+		"AACAA",
+		"CAACA",
+		"ACAAC",
+		"AACAA",
+		"AAAGA"})
+	if !got {
+		t.Error("isMutant() = false; want true")
+	}
+	got = isMutant([]string{
+		"AACAA",
+		"CAACA",
+		"ACAAC",
+		"AACAA",
+		"AAAGA"})
+	if !got {
+		t.Error("isMutant() = false; want true")
+	}
+	got = isMutant([]string{
 		"TGTT",
 		"TTAC",
 		"AAAG",
@@ -594,4 +621,7 @@ func BenchmarkIsMutant(b *testing.B) {
 			}
 		*/
 	}
+}
+func isMutant(dna []string) bool {
+	return IsMutant(len(dna), dna)
 }

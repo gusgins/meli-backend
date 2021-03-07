@@ -7,10 +7,6 @@ type estado struct {
 	mutante        bool
 }
 
-func isMutant(dna []string) bool {
-	return IsMutant(len(dna), dna)
-}
-
 // IsMutant find if dna of size is mutant
 //
 // N° - Checks
@@ -101,13 +97,13 @@ func IsMutant(size int, dna []string) bool {
 			}
 		}
 	}
-	for i := 1; i < size-4; i++ {
+	for i := 1; i < size-3; i++ {
 		e.genes[4] = ' '
 		e.genes[5] = ' '
 		e.genes[6] = ' '
 		e.genes[7] = ' '
 		for j := i; j < size; j++ {
-			e.checkGene(4, dna[j-1][j])
+			e.checkGene(4, dna[j-i][j])
 			if e.mutante {
 				return true
 			}
@@ -115,7 +111,7 @@ func IsMutant(size int, dna []string) bool {
 			if e.mutante {
 				return true
 			}
-			e.checkGene(6, dna[j-1][(size-1)-(j)])
+			e.checkGene(6, dna[j-i][(size-1)-(j)])
 			if e.mutante {
 				return true
 			}

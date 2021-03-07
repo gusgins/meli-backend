@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>service: Go Coverage Report</title>
+		<title>model: Go Coverage Report</title>
 		<style>
 			body {
 				background: black;
@@ -55,9 +55,15 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/gusgins/meli-backend/service/service.go (68.2%)</option>
+				<option value="file0">github.com/gusgins/meli-backend/model/registry.go (88.1%)</option>
 				
-				<option value="file1">github.com/gusgins/meli-backend/utils/dna_checker.go (93.8%)</option>
+				<option value="file1">github.com/gusgins/meli-backend/model/stats.go (100.0%)</option>
+				
+				<option value="file2">github.com/gusgins/meli-backend/repository/mysql/mysql.go (69.0%)</option>
+				
+				<option value="file3">github.com/gusgins/meli-backend/service/service.go (92.0%)</option>
+				
+				<option value="file4">github.com/gusgins/meli-backend/utils/dna_checker.go (95.7%)</option>
 				
 				</select>
 			</div>
@@ -71,24 +77,215 @@
 		</div>
 		<div id="content">
 		
-		<pre class="file" id="file0" style="display: none">package service
+		<pre class="file" id="file0" style="display: none">package model
+
+import (
+        "errors"
+        "fmt"
+        "strings"
+
+        "github.com/eknkc/basex"
+        "github.com/gusgins/meli-backend/utils"
+)
+
+// Registry to check if it's mutant
+type Registry struct {
+        Dna    []string `json:"dna"`
+        Size   int
+        Code   string
+        Mutant bool
+}
+
+// ErrInvalidCharacter is returned by Validate when invalid characters
+// are found in the dna of the registry
+var ErrInvalidCharacter = errors.New("invalid character")
+
+// ErrInvalidMatrixSize is returned by Validate when matrix side is not
+// consistent in the dna of the registry
+var ErrInvalidMatrixSize = errors.New("invalid matrix size")
+
+// Validate checks dna consistency
+func (r *Registry) Validate() error <span class="cov8" title="1">{
+        r.Size = len(r.Dna)
+        values := map[rune]string{'A': "0", 'T': "1", 'C': "2", 'G': "3"}
+        code := ""
+        size := len(r.Dna)
+        for _, s := range r.Dna </span><span class="cov8" title="1">{
+                if len(s) != size </span><span class="cov8" title="1">{
+                        return ErrInvalidMatrixSize
+                }</span>
+                <span class="cov8" title="1">for _, c := range s </span><span class="cov8" title="1">{
+                        if val, found := values[c]; found </span><span class="cov8" title="1">{
+                                code += val
+                        }</span> else<span class="cov8" title="1"> {
+                                return ErrInvalidCharacter
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">var err error
+        r.Code, err = generateCode(code)
+        fmt.Println(r.Dna, r.Size, r.Code)
+        codeDna, err := decode(r.Size, r.Code)
+        fmt.Println(codeDna)
+        return err</span>
+}
+
+// IsMutant returns if registry is mutant
+func (r *Registry) IsMutant() bool <span class="cov0" title="0">{
+        r.Mutant = utils.IsMutant(r.Size, r.Dna)
+        return r.Mutant
+}</span>
+
+func generateCode(code string) (string, error) <span class="cov8" title="1">{
+        encoding, err := basex.NewEncoding("0123")
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+        <span class="cov8" title="1">decodedCode, err := encoding.Decode(code)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", ErrInvalidCharacter
+        }</span>
+        <span class="cov8" title="1">return string(decodedCode), nil</span>
+}
+
+func decode(size int, code string) ([]string, error) <span class="cov8" title="1">{
+        values := map[rune]rune{'0': 'A', '1': 'T', '2': 'C', '3': 'G'}
+        dna := make([]string, size, size)
+        encoding, err := basex.NewEncoding("0123")
+        if err != nil </span><span class="cov0" title="0">{
+                return dna, err
+        }</span>
+        <span class="cov8" title="1">encodedCode := encoding.Encode([]byte(code))
+        for i := size - 1; i &gt;= 0; i-- </span><span class="cov8" title="1">{
+                var s string
+                if len(encodedCode) &gt;= size </span><span class="cov8" title="1">{
+                        s = encodedCode[len(encodedCode)-size:]
+                        encodedCode = encodedCode[0 : len(encodedCode)-size]
+                }</span> else<span class="cov8" title="1"> {
+                        s = encodedCode[0:]
+                        encodedCode = encodedCode[0:0]
+                }</span>
+                <span class="cov8" title="1">dna[i] = strings.Map(func(r rune) rune </span><span class="cov8" title="1">{ return values[r] }</span>, s)
+        }
+        <span class="cov8" title="1">return dna, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package model
+
+import "fmt"
+
+// Stats to store verification statistics
+type Stats struct {
+        Mutants int
+        Humans  int
+}
+
+// GetRatio returns Stats' Mutant/Human ratio
+func (s *Stats) GetRatio() string <span class="cov8" title="1">{
+        if s.Humans == 0 </span><span class="cov8" title="1">{
+                return "0"
+        }</span>
+        <span class="cov8" title="1">return fmt.Sprintf("%.2f", float64(s.Mutants)/float64(s.Humans))</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package mysql
+
+import (
+        "database/sql"
+        "fmt"
+
+        // Mysql Driver
+        _ "github.com/go-sql-driver/mysql"
+
+        "github.com/gusgins/meli-backend/config"
+        "github.com/gusgins/meli-backend/model"
+        repo "github.com/gusgins/meli-backend/repository"
+)
+
+type repository struct {
+        db *sql.DB
+}
+
+// NewRepository Constructor for MySQL Repository
+func NewRepository(c config.Configuration) (repo.Repository, error) <span class="cov0" title="0">{
+        connectionString := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8&amp;parseTime=True&amp;loc=Local", c.Database.User, c.Database.Password, c.Database.Host, c.Database.Port, c.Database.Name)
+        db, err := sql.Open("mysql", connectionString)
+        db.SetMaxIdleConns(10)
+        // db.SetMaxOpenConns(0)
+        if err != nil </span><span class="cov0" title="0">{
+                return &amp;repository{db}, err
+        }</span>
+
+        // ping to check if db connection works
+        <span class="cov0" title="0">if err = db.Ping(); err != nil </span><span class="cov0" title="0">{
+                return &amp;repository{db}, err
+        }</span>
+        <span class="cov0" title="0">db.Exec("CREATE TABLE IF NOT EXISTS `registry`(`size` INT UNSIGNED NOT NULL,id VARBINARY(200) NOT NULL,mutant BOOLEAN NOT NULL,PRIMARY KEY (size,id)) ENGINE=MyISAM DEFAULT CHARSET=utf8;")
+        return &amp;repository{db}, err</span>
+}
+
+func (r *repository) FindMutant(registry model.Registry) (bool, error) <span class="cov8" title="1">{
+        row := r.db.QueryRow("SELECT mutant FROM registry WHERE size = ? AND id = ?", registry.Size, registry.Code)
+        var mutant bool
+        err := row.Scan(&amp;mutant)
+        if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                return mutant, repo.ErrRegistryNotFound
+        }</span>
+        <span class="cov8" title="1">if err != nil </span><span class="cov8" title="1">{
+                return mutant, err
+        }</span>
+
+        <span class="cov8" title="1">return mutant, nil</span>
+}
+
+func (r *repository) StoreRegistry(registry model.Registry) error <span class="cov8" title="1">{
+        stmt, err := r.db.Prepare("INSERT INTO registry (size, id, mutant) VALUES(?, ?, ?)")
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">_, err = stmt.Exec(registry.Size,
+                registry.Code,
+                registry.Mutant,
+        )
+        return err</span>
+}
+
+func (r *repository) GetStats() (model.Stats, error) <span class="cov8" title="1">{
+        row := r.db.QueryRow("SELECT COUNT(NULLIF(mutant,0)) Mutants, COUNT(NULLIF(mutant,1)) Humans FROM registry")
+        stats := model.Stats{}
+        err := row.Scan(&amp;stats.Mutants, &amp;stats.Humans)
+        if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                return stats, repo.ErrStatsNotFound
+        }</span>
+        <span class="cov8" title="1">return stats, nil</span>
+}
+
+func (r *repository) Close() error <span class="cov8" title="1">{
+        return r.db.Close()
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package service
 
 import (
         "github.com/gin-gonic/gin"
         "github.com/gusgins/meli-backend/config"
         "github.com/gusgins/meli-backend/model"
-        "github.com/gusgins/meli-backend/storage"
+        "github.com/gusgins/meli-backend/repository"
 )
 
 // Service exported
 type Service struct {
-        Config  config.Configuration
-        Storage storage.Storage
+        Config     config.Configuration
+        Repository repository.Repository
+        skipDB     bool
 }
 
 // NewService creates service with config
-func NewService(config config.Configuration, storage storage.Storage) Service <span class="cov8" title="1">{
-        service := Service{config, storage}
+func NewService(config config.Configuration, repository repository.Repository) Service <span class="cov8" title="1">{
+        service := Service{Config: config, Repository: repository}
         return service
 }</span>
 
@@ -105,30 +302,44 @@ func (s Service) PostMutant(c *gin.Context) <span class="cov8" title="1">{
                 return
         }</span>
 
-        // If err is nil, then registry was found in storage
-        <span class="cov8" title="1">if isMutant, err := s.Storage.Find(registry); err == nil </span><span class="cov8" title="1">{
-                if isMutant </span><span class="cov8" title="1">{
-                        c.JSON(200, gin.H{"status": "authorized"})
-                        return
-                }</span> else<span class="cov8" title="1"> {
-                        c.JSON(403, gin.H{"error": "unauthorized"})
-                        return
-                }</span>
+        // If err is nil, then registry was found in repository
+        <span class="cov8" title="1">if !s.skipDB </span><span class="cov8" title="1">{
+                if isMutant, err := s.Repository.FindMutant(registry); err == nil </span><span class="cov8" title="1">{
+                        if isMutant </span><span class="cov8" title="1">{
+                                c.JSON(200, gin.H{"status": "authorized"})
+                        }</span> else<span class="cov8" title="1"> {
+                                c.JSON(403, gin.H{"error": "unauthorized"})
+                        }</span>
+                        <span class="cov8" title="1">return</span>
+                }
         }
 
-        <span class="cov0" title="0">registry.IsMutant()
-        s.Storage.Store(registry)
-        if registry.Mutant </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">registry.IsMutant()
+        s.Repository.StoreRegistry(registry)
+        if registry.Mutant </span><span class="cov8" title="1">{
                 c.JSON(200, gin.H{"status": "authorized"})
-                return
-        }</span> else<span class="cov0" title="0"> {
+        }</span> else<span class="cov8" title="1"> {
                 c.JSON(403, gin.H{"error": "unauthorized"})
+        }</span>
+}
+
+// GetStats returns db stats
+func (s Service) GetStats(c *gin.Context) <span class="cov8" title="1">{
+
+        stats, err := s.Repository.GetStats()
+        if err != nil </span><span class="cov0" title="0">{
+                c.JSON(403, gin.H{"error": err.Error()})
                 return
         }</span>
+        <span class="cov8" title="1">c.JSON(200, gin.H{
+                "count_mutant_dna": stats.Mutants,
+                "count_human_dna":  stats.Humans,
+                "ratio":            stats.GetRatio(),
+        })</span>
 }
 </pre>
 		
-		<pre class="file" id="file1" style="display: none">package utils
+		<pre class="file" id="file4" style="display: none">package utils
 
 type estado struct {
         genes          []byte
@@ -136,10 +347,6 @@ type estado struct {
         mutaciones     int
         mutante        bool
 }
-
-func isMutant(dna []string) bool <span class="cov8" title="1">{
-        return IsMutant(len(dna), dna)
-}</span>
 
 // IsMutant find if dna of size is mutant
 //
@@ -231,21 +438,21 @@ func IsMutant(size int, dna []string) bool <span class="cov8" title="1">{
                         }</span>
                 }
         }
-        <span class="cov8" title="1">for i := 1; i &lt; size-4; i++ </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">for i := 1; i &lt; size-3; i++ </span><span class="cov8" title="1">{
                 e.genes[4] = ' '
                 e.genes[5] = ' '
                 e.genes[6] = ' '
                 e.genes[7] = ' '
                 for j := i; j &lt; size; j++ </span><span class="cov8" title="1">{
-                        e.checkGene(4, dna[j-1][j])
-                        if e.mutante </span><span class="cov0" title="0">{
+                        e.checkGene(4, dna[j-i][j])
+                        if e.mutante </span><span class="cov8" title="1">{
                                 return true
                         }</span>
                         <span class="cov8" title="1">e.checkGene(5, dna[j][j-i])
                         if e.mutante </span><span class="cov8" title="1">{
                                 return true
                         }</span>
-                        <span class="cov8" title="1">e.checkGene(6, dna[j-1][(size-1)-(j)])
+                        <span class="cov8" title="1">e.checkGene(6, dna[j-i][(size-1)-(j)])
                         if e.mutante </span><span class="cov0" title="0">{
                                 return true
                         }</span>

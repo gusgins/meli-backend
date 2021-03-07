@@ -4,18 +4,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gusgins/meli-backend/config"
 	"github.com/gusgins/meli-backend/model"
-	"github.com/gusgins/meli-backend/storage"
+	"github.com/gusgins/meli-backend/repository"
 )
 
 // Service exported
 type Service struct {
-	Config  config.Configuration
-	Storage storage.Storage
+	Config     config.Configuration
+	Repository repository.Repository
+	skipDB     bool
 }
 
 // NewService creates service with config
-func NewService(config config.Configuration, storage storage.Storage) Service {
-	service := Service{config, storage}
+func NewService(config config.Configuration, repository repository.Repository) Service {
+	service := Service{Config: config, Repository: repository}
 	return service
 }
 
@@ -32,18 +33,20 @@ func (s Service) PostMutant(c *gin.Context) {
 		return
 	}
 
-	// If err is nil, then registry was found in storage
-	if isMutant, err := s.Storage.Find(registry); err == nil {
-		if isMutant {
-			c.JSON(200, gin.H{"status": "authorized"})
-		} else {
-			c.JSON(403, gin.H{"error": "unauthorized"})
+	// If err is nil, then registry was found in repository
+	if !s.skipDB {
+		if isMutant, err := s.Repository.FindMutant(registry); err == nil {
+			if isMutant {
+				c.JSON(200, gin.H{"status": "authorized"})
+			} else {
+				c.JSON(403, gin.H{"error": "unauthorized"})
+			}
+			return
 		}
-		return
 	}
 
 	registry.IsMutant()
-	s.Storage.Store(registry)
+	s.Repository.StoreRegistry(registry)
 	if registry.Mutant {
 		c.JSON(200, gin.H{"status": "authorized"})
 	} else {
@@ -54,7 +57,7 @@ func (s Service) PostMutant(c *gin.Context) {
 // GetStats returns db stats
 func (s Service) GetStats(c *gin.Context) {
 
-	stats, err := s.Storage.GetStats()
+	stats, err := s.Repository.GetStats()
 	if err != nil {
 		c.JSON(403, gin.H{"error": err.Error()})
 		return
