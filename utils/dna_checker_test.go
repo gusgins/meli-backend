@@ -292,6 +292,24 @@ func TestIsMutant(t *testing.T) {
 	got = isMutant([]string{
 		"AACAA",
 		"CAACA",
+		"AAAGC",
+		"ACCAA",
+		"AGAGA"})
+	if !got {
+		t.Error("isMutant() = false; want true")
+	}
+	got = isMutant([]string{
+		"AACCA",
+		"CACCA",
+		"AGAAC",
+		"AGAAA",
+		"AAAGA"})
+	if !got {
+		t.Error("isMutant() = false; want true")
+	}
+	got = isMutant([]string{
+		"AACAA",
+		"CAACA",
 		"ACAAC",
 		"AACAA",
 		"AAAGA"})
