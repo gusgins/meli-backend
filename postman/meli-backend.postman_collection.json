@@ -14,13 +14,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://34.95.196.173/stats",
+							"raw": "http://34.83.186.197/stats",
 							"protocol": "http",
 							"host": [
 								"34",
-								"95",
-								"196",
-								"173"
+								"83",
+								"186",
+								"197"
 							],
 							"path": [
 								"stats"
@@ -44,13 +44,13 @@
 							}
 						},
 						"url": {
-							"raw": "http://34.95.196.173/mutant",
+							"raw": "http://34.83.186.197/mutant",
 							"protocol": "http",
 							"host": [
 								"34",
-								"95",
-								"196",
-								"173"
+								"83",
+								"186",
+								"197"
 							],
 							"path": [
 								"mutant"
@@ -74,13 +74,13 @@
 							}
 						},
 						"url": {
-							"raw": "http://34.95.196.173/mutant",
+							"raw": "http://34.83.186.197/mutant",
 							"protocol": "http",
 							"host": [
 								"34",
-								"95",
-								"196",
-								"173"
+								"83",
+								"186",
+								"197"
 							],
 							"path": [
 								"mutant"
@@ -104,13 +104,13 @@
 							}
 						},
 						"url": {
-							"raw": "http://34.95.196.173/mutant",
+							"raw": "http://34.83.186.197/mutant",
 							"protocol": "http",
 							"host": [
 								"34",
-								"95",
-								"196",
-								"173"
+								"83",
+								"186",
+								"197"
 							],
 							"path": [
 								"mutant"
