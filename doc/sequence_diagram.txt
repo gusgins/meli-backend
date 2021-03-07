@@ -1,0 +1,38 @@
+using: https://www.websequencediagrams.com/
+
+title API REST
+
+User->Handler: POST /mutant/ {dna}
+Handler->Service: PostMutant {request}
+Service->Model: Registry.Validate registry{dna}
+Model->Service: {registry{dna,size,code}}
+Service->Repository: FindMutant {registry}
+alt isFound
+    Repository->Service: isMutant
+    alt isMutant
+        Service->Handler: 200 {authorized}
+        Handler->User: 200 {authorized}
+    else !isMutant
+        Service->Handler: 403 {unauthorized}
+        Handler->User: 403 {unauthorized}
+    end
+else !isFound
+    Repository->Service: NotFound
+    Service->DnaChecker: isMutant{registry}
+    DnaChecker->Service: isMutant
+    alt isMutant
+        Service->Handler: 200 {authorized}
+        Handler->User: 200 {authorized}
+    else !isMutant
+        Service->Handler: 403 {unauthorized}
+        Handler->User: 403 {unauthorized}
+    end
+end
+
+User->Handler: GET /stats/
+Handler->Service: GetStats {request}
+Service->Repository: GetStats
+Repository->Service: stats
+Service->Handler: stats
+Handler->User: 200 {stats}
+
