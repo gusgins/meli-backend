@@ -150,7 +150,6 @@ func TestGetStats(t *testing.T) {
 
 	var responseJSON model.Stats
 	err = json.Unmarshal([]byte(w.Body.String()), &responseJSON)
-	fmt.Println(responseJSON)
 	assert.NoError(t, err)
 	assert.Equal(t, w.Code, http.StatusOK)
 }

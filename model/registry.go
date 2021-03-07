@@ -2,7 +2,6 @@ package model
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/eknkc/basex"
@@ -45,9 +44,6 @@ func (r *Registry) Validate() error {
 	}
 	var err error
 	r.Code, err = generateCode(code)
-	fmt.Println(r.Dna, r.Size, r.Code)
-	codeDna, err := decode(r.Size, r.Code)
-	fmt.Println(codeDna)
 	return err
 }
 
