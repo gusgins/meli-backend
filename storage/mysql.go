@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 )
 
 type mySQLStorage struct {
+	db               *sql.DB
 	connectionString string
 }
 
@@ -64,7 +66,26 @@ func (s *mySQLStorage) GetStats() (model.Stats, error) {
 }
 
 func (s *mySQLStorage) initDatabase() {
+	var err error
+	s.db, err = sql.Open("mysql", s.connectionString)
+	if err != nil {
+		log.Fatal("Error while opening database connection:", err.Error())
+	}
+	// try to connect to db, retry connection until it works
+	tries := 0
+	for err = s.db.Ping(); err != nil || tries > 10; err = s.db.Ping() {
+		s.db, err = sql.Open("mysql", s.connectionString)
+		log.Fatal("Error on Ping to database connection:", err.Error())
+		tries++
+	}
+	if err != nil {
+		log.Fatal("Max retries exceeded when connecting to database:", err.Error())
+	}
 	s.executeSQL("CREATE TABLE IF NOT EXISTS `registry`(`size` INT UNSIGNED NOT NULL,id VARBINARY(200) NOT NULL,mutant BOOLEAN NOT NULL,PRIMARY KEY (size,id)) ENGINE=MyISAM DEFAULT CHARSET=utf8;", []interface{}{})
+}
+
+func (s *mySQLStorage) Clean() error {
+	return s.db.Close()
 }
 
 func (s *mySQLStorage) executeSQL(queryStr string, args []interface{}) []interface{} {

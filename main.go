@@ -15,6 +15,7 @@ func main() {
 	service := service.NewService(config, storage)
 	r := SetupRouter(config, service)
 	r.Run(fmt.Sprintf(":%d", config.API.Port)) // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	storage.Clean()
 }
 
 // SetupRouter sets routes and additional configuration

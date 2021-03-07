@@ -6,4 +6,5 @@ type Storage interface {
 	Find(model.Registry) (bool, error)
 	Store(model.Registry) error
 	GetStats() (model.Stats, error)
+	Clean() error
 }
