@@ -4,12 +4,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"os"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -17,34 +16,41 @@ import (
 const server = "http://localhost:8080"
 
 func main() {
-	// Valid gene pool
-	genes := []string{"A", "T", "C", "G"}
+	var maxSize, n int
+	var concurrent bool
+	flag.IntVar(&n, "n", 10, "Number of POST requests to generate")
+	flag.IntVar(&maxSize, "maxsize", 10, "Number of POST requests to generate")
+	flag.BoolVar(&concurrent, "concurrent", true, "Run concurrent requests")
+	flag.Parse()
+	if maxSize < 4 {
+		maxSize = 4
+	}
+	if n < 0 {
+		n = 0
+	}
 
 	// Random seed to generate different values on every execution
 	rand.Seed(time.Now().UnixNano())
 	// rand.Seed(1) // to test speed difference of postMutants and postMutantsConcurrent
 
-	n := 10
 	// Get ammount of runs from 1st command line argument, default 10 if no argument supplied
-	if len(os.Args) > 1 {
-		var err error
-		n, err = strconv.Atoi(os.Args[1])
-		// If any error, default to 10 runs
-		if err != nil {
-			n = 10
-		}
-	}
 
 	getStats()
 	start := time.Now()
-	postMutantsConcurrent(genes, n)
+	if concurrent {
+		postMutantsConcurrent(maxSize, n)
+	} else {
+		postMutants(maxSize, n)
+	}
 	elapsed := time.Since(start)
 	getStats()
-	fmt.Printf("postMutant(%d) took %s seconds\n", n, elapsed)
+	fmt.Printf("postMutant(%d) took %s\n", n, elapsed)
 }
 
-func buildDna(genes []string) []string {
-	size := rand.Intn(15) + 4
+func buildDna(maxSize int) []string {
+	// Valid gene pool
+	genes := []string{"A", "T", "C", "G"}
+	size := rand.Intn(maxSize)
 	dna := make([]string, size)
 	for j := 0; j < size; j++ {
 		str := ""
@@ -79,7 +85,7 @@ func getStats() {
 	}
 }
 
-func postMutantsConcurrent(genes []string, n int) {
+func postMutantsConcurrent(maxSize int, n int) {
 	sem := make(chan struct{}, 100)
 	wg := sync.WaitGroup{}
 	for i := 0; i < n; i++ {
@@ -87,19 +93,20 @@ func postMutantsConcurrent(genes []string, n int) {
 		select {
 		case sem <- struct{}{}:
 			go func() {
-				postMutant(buildDna(genes))
+				postMutant(buildDna(maxSize))
+				<-sem
 				wg.Done()
 			}()
 		default:
-			postMutant(buildDna(genes))
+			postMutant(buildDna(maxSize))
 			wg.Done()
 		}
 	}
 	wg.Wait()
 }
 
-func postMutants(genes []string, n int) {
+func postMutants(maxSize int, n int) {
 	for i := 0; i < n; i++ {
-		postMutant(buildDna(genes))
+		postMutant(buildDna(maxSize))
 	}
 }
