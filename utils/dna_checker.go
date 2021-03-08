@@ -1,10 +1,10 @@
 package utils
 
-type estado struct {
-	genes          []byte
-	genesRepetidos []int
-	mutaciones     int
-	mutante        bool
+type state struct {
+	genes             []byte
+	geneStringLengths []int
+	mutations         int
+	mutant            bool
 }
 
 // IsMutant find if dna of size is mutant
@@ -68,55 +68,55 @@ type estado struct {
 // 	[ ][ ][7][ ][ ][ ]    [ ][ ][ ][7][ ][ ]
 // 	[ ][7][ ][ ][ ][ ]    [ ][ ][7][ ][ ][ ]
 func IsMutant(size int, dna []string) bool {
-	e := estado{
-		genes:          make([]byte, 8),
-		genesRepetidos: make([]int, 8),
-		mutaciones:     0,
+	s := state{
+		genes:             make([]byte, 8),
+		geneStringLengths: make([]int, 8),
+		mutations:         0,
 	}
-	e.genes[0] = ' '
-	e.genes[1] = ' '
+	s.genes[0] = ' '
+	s.genes[1] = ' '
 	for i := 0; i < size; i++ {
-		e.checkGene(0, dna[i][i])
-		if e.mutante {
+		s.checkGene(0, dna[i][i])
+		if s.mutant {
 			return true
 		}
-		e.checkGene(1, dna[i][size-1-i])
-		if e.mutante {
+		s.checkGene(1, dna[i][size-1-i])
+		if s.mutant {
 			return true
 		}
-		e.genes[2] = ' '
-		e.genes[3] = ' '
+		s.genes[2] = ' '
+		s.genes[3] = ' '
 		for j := 0; j < size; j++ {
-			e.checkGene(2, dna[i][j])
-			if e.mutante {
+			s.checkGene(2, dna[i][j])
+			if s.mutant {
 				return true
 			}
-			e.checkGene(3, dna[j][i])
-			if e.mutante {
+			s.checkGene(3, dna[j][i])
+			if s.mutant {
 				return true
 			}
 		}
 	}
 	for i := 1; i < size-3; i++ {
-		e.genes[4] = ' '
-		e.genes[5] = ' '
-		e.genes[6] = ' '
-		e.genes[7] = ' '
+		s.genes[4] = ' '
+		s.genes[5] = ' '
+		s.genes[6] = ' '
+		s.genes[7] = ' '
 		for j := i; j < size; j++ {
-			e.checkGene(4, dna[j-i][j])
-			if e.mutante {
+			s.checkGene(4, dna[j-i][j])
+			if s.mutant {
 				return true
 			}
-			e.checkGene(5, dna[j][j-i])
-			if e.mutante {
+			s.checkGene(5, dna[j][j-i])
+			if s.mutant {
 				return true
 			}
-			e.checkGene(6, dna[j-i][(size-1)-(j)])
-			if e.mutante {
+			s.checkGene(6, dna[j-i][(size-1)-(j)])
+			if s.mutant {
 				return true
 			}
-			e.checkGene(7, dna[j][(size-1)-(j-i)])
-			if e.mutante {
+			s.checkGene(7, dna[j][(size-1)-(j-i)])
+			if s.mutant {
 				return true
 			}
 		}
@@ -124,17 +124,17 @@ func IsMutant(size int, dna []string) bool {
 	return false
 }
 
-func (e *estado) checkGene(gene int, dnaGene byte) {
-	if e.genes[gene] != dnaGene {
-		e.genes[gene] = dnaGene
-		e.genesRepetidos[gene] = 0
+func (s *state) checkGene(gene int, dnaGene byte) {
+	if s.genes[gene] != dnaGene {
+		s.genes[gene] = dnaGene
+		s.geneStringLengths[gene] = 0
 	}
-	e.genesRepetidos[gene]++
-	if e.genesRepetidos[gene] >= 4 {
-		e.mutaciones++
-		e.genesRepetidos[gene] = 0
+	s.geneStringLengths[gene]++
+	if s.geneStringLengths[gene] >= 4 {
+		s.mutations++
+		s.geneStringLengths[gene] = 0
 	}
-	if e.mutaciones > 1 {
-		e.mutante = true
+	if s.mutations > 1 {
+		s.mutant = true
 	}
 }
