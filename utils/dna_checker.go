@@ -1,140 +1,128 @@
 package utils
 
+import (
+	"sync"
+)
+
 type state struct {
-	genes             []byte
-	geneStringLengths []int
-	mutations         int
-	mutant            bool
+	size           int
+	dna            []string
+	mutations      int
+	mutant         bool
+	mutationsMutex sync.Mutex
+	wg             sync.WaitGroup
+}
+type direction struct {
+	nextI int
+	nextJ int
 }
 
 // IsMutant find if dna of size is mutant
-//
-// N° - Checks
-//
-// [0] - Major Diagonal
-// 	[0][ ][ ][ ][ ][ ]
-// 	[ ][0][ ][ ][ ][ ]
-// 	[ ][ ][0][ ][ ][ ]
-// 	[ ][ ][ ][0][ ][ ]
-// 	[ ][ ][ ][ ][0][ ]
-// 	[ ][ ][ ][ ][ ][0]
-// [1] - Minor Diagonal
-// 	[ ][ ][ ][ ][ ][1]
-// 	[ ][ ][ ][ ][1][ ]
-// 	[ ][ ][ ][1][ ][ ]
-// 	[ ][ ][1][ ][ ][ ]
-// 	[ ][1][ ][ ][ ][ ]
-// 	[1][ ][ ][ ][ ][ ]
-// [2] - Rows
-// 	[2][2][2][2][2][2]    [ ][ ][ ][ ][ ][ ]
-// 	[ ][ ][ ][ ][ ][ ]    [2][2][2][2][2][2]
-// 	[ ][ ][ ][ ][ ][ ] => [ ][ ][ ][ ][ ][ ]
-// 	[ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-// 	[ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-// 	[ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-// [3] - Columns
-// 	[3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
-// 	[3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
-// 	[3][ ][ ][ ][ ][ ] => [ ][3][ ][ ][ ][ ]
-// 	[3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
-// 	[3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
-// 	[3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
-// [4] - Above Major Diagonal
-// 	[ ][4][ ][ ][ ][ ]    [ ][ ][4][ ][ ][ ]
-// 	[ ][ ][4][ ][ ][ ]    [ ][ ][ ][4][ ][ ]
-// 	[ ][ ][ ][4][ ][ ] => [ ][ ][ ][ ][4][ ]
-// 	[ ][ ][ ][ ][4][ ]    [ ][ ][ ][ ][ ][4]
-// 	[ ][ ][ ][ ][ ][4]    [ ][ ][ ][ ][ ][ ]
-// 	[ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-// [5] - Below Major Diagonal
-// 	[ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-// 	[5][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-// 	[ ][5][ ][ ][ ][ ] => [5][ ][ ][ ][ ][ ]
-// 	[ ][ ][5][ ][ ][ ]    [ ][5][ ][ ][ ][ ]
-// 	[ ][ ][ ][5][ ][ ]    [ ][ ][5][ ][ ][ ]
-// 	[ ][ ][ ][ ][5][ ]    [ ][ ][ ][5][ ][ ]
-// [6] - Above Minor Diagonal
-// 	[ ][ ][ ][ ][6][ ]    [ ][ ][ ][6][ ][ ]
-// 	[ ][ ][ ][6][ ][ ]    [ ][ ][6][ ][ ][ ]
-// 	[ ][ ][6][ ][ ][ ] => [ ][6][ ][ ][ ][ ]
-// 	[ ][6][ ][ ][ ][ ]    [6][ ][ ][ ][ ][ ]
-// 	[6][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-// 	[ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-// [7] - Below Minor Diagonal
-// 	[ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-// 	[ ][ ][ ][ ][ ][7]    [ ][ ][ ][ ][ ][ ]
-// 	[ ][ ][ ][ ][7][ ] => [ ][ ][ ][ ][ ][7]
-// 	[ ][ ][ ][7][ ][ ]    [ ][ ][ ][ ][7][ ]
-// 	[ ][ ][7][ ][ ][ ]    [ ][ ][ ][7][ ][ ]
-// 	[ ][7][ ][ ][ ][ ]    [ ][ ][7][ ][ ][ ]
 func IsMutant(size int, dna []string) bool {
-	s := state{
-		genes:             make([]byte, 8),
-		geneStringLengths: make([]int, 8),
-		mutations:         0,
+	s := &state{
+		size:           size,
+		dna:            dna,
+		mutations:      0,
+		mutationsMutex: sync.Mutex{},
+		wg:             sync.WaitGroup{},
 	}
-	s.genes[0] = ' '
-	s.genes[1] = ' '
+	dRow := &direction{0, 1}
+	dCol := &direction{1, 0}
+	dMajD := &direction{1, 1}
+	dMinD := &direction{1, -1}
 	for i := 0; i < size; i++ {
-		s.checkGene(0, dna[i][i])
-		if s.mutant {
-			return true
-		}
-		s.checkGene(1, dna[i][size-1-i])
-		if s.mutant {
-			return true
-		}
-		s.genes[2] = ' '
-		s.genes[3] = ' '
-		for j := 0; j < size; j++ {
-			s.checkGene(2, dna[i][j])
-			if s.mutant {
-				return true
-			}
-			s.checkGene(3, dna[j][i])
-			if s.mutant {
-				return true
+		s.wg.Add(1)
+		go s.check(i, 0, dRow) // Check each Row
+		// dRow
+		// [i=0]                  [i=1]
+		// [i0][>][>][>][>][>]    [  ][ ][ ][ ][ ][ ]
+		// [  ][ ][ ][ ][ ][ ]    [i0][>][>][>][>][>]
+		// [  ][ ][ ][ ][ ][ ] => [  ][ ][ ][ ][ ][ ]
+		// [  ][ ][ ][ ][ ][ ]    [  ][ ][ ][ ][ ][ ]
+		// [  ][ ][ ][ ][ ][ ]    [  ][ ][ ][ ][ ][ ]
+		// [  ][ ][ ][ ][ ][ ]    [  ][ ][ ][ ][ ][ ]
+
+		s.wg.Add(1)
+		go s.check(0, i, dCol) // Check each Column
+		// dCol
+		// [i=0]                  [i=1]
+		// [0i][ ][ ][ ][ ][ ]    [ ][0i][ ][ ][ ][ ]
+		// [v ][ ][ ][ ][ ][ ]    [ ][v ][ ][ ][ ][ ]
+		// [v ][ ][ ][ ][ ][ ] => [ ][v ][ ][ ][ ][ ]
+		// [v ][ ][ ][ ][ ][ ]    [ ][v ][ ][ ][ ][ ]
+		// [v ][ ][ ][ ][ ][ ]    [ ][v ][ ][ ][ ][ ]
+		// [v ][ ][ ][ ][ ][ ]    [ ][v ][ ][ ][ ][ ]
+
+		if i <= size-4 { // if Diagonal has 4 or more elements
+			s.wg.Add(1)
+			go s.check(0, i, dMajD) // Check in Main Diagonal direction starting from [0][0] to [0][size-4]
+			// dMajD - To right
+			// [i=0]                  [i=1]
+			// [i0][ ][ ][ ][ ][ ]    [ ][i0][ ][ ][ ][ ]
+			// [  ][\][ ][ ][ ][ ]    [ ][  ][\][ ][ ][ ]
+			// [  ][ ][\][ ][ ][ ] => [ ][  ][ ][\][ ][ ]
+			// [  ][ ][ ][\][ ][ ]    [ ][  ][ ][ ][\][ ]
+			// [  ][ ][ ][ ][\][ ]    [ ][  ][ ][ ][ ][\]
+			// [  ][ ][ ][ ][ ][\]    [ ][  ][ ][ ][ ][ ]
+
+			s.wg.Add(1)
+			go s.check(i, s.size-1, dMinD) // Check in Minor Diagonal direction starting from [0][size-1] to [size-4][size-1]
+			// dMinD - To bottom
+			// [i=0]                  [i=1]
+			// [ ][ ][ ][ ][ ][i5]    [ ][ ][ ][ ][ ][  ]
+			// [ ][ ][ ][ ][/][  ]    [ ][ ][ ][ ][ ][i5]
+			// [ ][ ][ ][/][ ][  ] => [ ][ ][ ][ ][/][  ]
+			// [ ][ ][/][ ][ ][  ]    [ ][ ][ ][/][ ][  ]
+			// [ ][/][ ][ ][ ][  ]    [ ][ ][/][ ][ ][  ]
+			// [/][ ][ ][ ][ ][  ]    [ ][/][ ][ ][ ][  ]
+			if i > 0 {
+				s.wg.Add(1)
+				go s.check(i, 0, dMajD) // Check in Major Diagonal direction starting from [1][0] to [size-4][0]
+				// dMajD - To bottom
+				// [i=1]                  [i=2]
+				// [  ][ ][ ][ ][ ][ ]    [  ][ ][ ][ ][ ][ ]
+				// [i0][ ][ ][ ][ ][ ]    [  ][ ][ ][ ][ ][ ]
+				// [  ][\][ ][ ][ ][ ] => [i0][ ][ ][ ][ ][ ]
+				// [  ][ ][\][ ][ ][ ]    [  ][\][ ][ ][ ][ ]
+				// [  ][ ][ ][\][ ][ ]    [  ][ ][\][ ][ ][ ]
+				// [  ][ ][ ][ ][\][ ]    [  ][ ][ ][\][ ][ ]
+
+				s.wg.Add(1)
+				go s.check(0, s.size-1-i, dMinD) // Check in Minor Diagonal direction starting from [size-2][0] to [3][0]
+				// dMinD - To left
+				// [i=1] => r=s.size-1-i  [i=2] => r=s.size-1-i
+				// [ ][ ][ ][ ][r0][ ]    [ ][ ][ ][r0][ ][ ]
+				// [ ][ ][ ][/][  ][ ]    [ ][ ][/][  ][ ][ ]
+				// [ ][ ][/][ ][  ][ ] => [ ][/][ ][  ][ ][ ]
+				// [ ][/][ ][ ][  ][ ]    [/][ ][ ][  ][ ][ ]
+				// [/][ ][ ][ ][  ][ ]    [ ][ ][ ][  ][ ][ ]
+				// [ ][ ][ ][ ][  ][ ]    [ ][ ][ ][  ][ ][ ]
 			}
 		}
 	}
-	for i := 1; i < size-3; i++ {
-		s.genes[4] = ' '
-		s.genes[5] = ' '
-		s.genes[6] = ' '
-		s.genes[7] = ' '
-		for j := i; j < size; j++ {
-			s.checkGene(4, dna[j-i][j])
-			if s.mutant {
-				return true
-			}
-			s.checkGene(5, dna[j][j-i])
-			if s.mutant {
-				return true
-			}
-			s.checkGene(6, dna[j-i][(size-1)-(j)])
-			if s.mutant {
-				return true
-			}
-			s.checkGene(7, dna[j][(size-1)-(j-i)])
-			if s.mutant {
-				return true
-			}
-		}
-	}
-	return false
+	s.wg.Wait()
+	return s.mutant
 }
 
-func (s *state) checkGene(gene int, dnaGene byte) {
-	if s.genes[gene] != dnaGene {
-		s.genes[gene] = dnaGene
-		s.geneStringLengths[gene] = 0
+func (s *state) check(startI int, startJ int, dir *direction) {
+	gene := s.dna[startI][startJ]
+	rep := 1
+	for i, j := startI+dir.nextI, startJ+dir.nextJ; i < s.size && j < s.size && i >= 0 && j >= 0 && !s.mutant; i, j = i+dir.nextI, j+dir.nextJ {
+		if gene == s.dna[i][j] {
+			rep++
+			if rep == 4 {
+				s.mutationsMutex.Lock()
+				s.mutations++
+				if s.mutations > 1 {
+					s.mutant = true
+				}
+				s.mutationsMutex.Unlock()
+				gene = ' '
+			}
+		} else {
+			gene = s.dna[i][j]
+			rep = 1
+		}
 	}
-	s.geneStringLengths[gene]++
-	if s.geneStringLengths[gene] >= 4 {
-		s.mutations++
-		s.geneStringLengths[gene] = 0
-	}
-	if s.mutations > 1 {
-		s.mutant = true
-	}
+	s.wg.Done()
 }

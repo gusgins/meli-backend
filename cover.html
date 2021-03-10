@@ -337,143 +337,131 @@ func (s Service) GetStats(c *gin.Context) <span class="cov8" title="1">{
 		
 		<pre class="file" id="file4" style="display: none">package utils
 
-type estado struct {
-        genes          []byte
-        genesRepetidos []int
-        mutaciones     int
-        mutante        bool
+import (
+        "sync"
+)
+
+type state struct {
+        size           int
+        dna            []string
+        mutations      int
+        mutant         bool
+        mutationsMutex sync.Mutex
+        wg             sync.WaitGroup
+}
+type direction struct {
+        nextI int
+        nextJ int
 }
 
 // IsMutant find if dna of size is mutant
-//
-// N° - Checks
-//
-// [0] - Major Diagonal
-//         [0][ ][ ][ ][ ][ ]
-//         [ ][0][ ][ ][ ][ ]
-//         [ ][ ][0][ ][ ][ ]
-//         [ ][ ][ ][0][ ][ ]
-//         [ ][ ][ ][ ][0][ ]
-//         [ ][ ][ ][ ][ ][0]
-// [1] - Minor Diagonal
-//         [ ][ ][ ][ ][ ][1]
-//         [ ][ ][ ][ ][1][ ]
-//         [ ][ ][ ][1][ ][ ]
-//         [ ][ ][1][ ][ ][ ]
-//         [ ][1][ ][ ][ ][ ]
-//         [1][ ][ ][ ][ ][ ]
-// [2] - Rows
-//         [2][2][2][2][2][2]    [ ][ ][ ][ ][ ][ ]
-//         [ ][ ][ ][ ][ ][ ]    [2][2][2][2][2][2]
-//         [ ][ ][ ][ ][ ][ ] =&gt; [ ][ ][ ][ ][ ][ ]
-//         [ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-//         [ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-//         [ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-// [3] - Columns
-//         [3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
-//         [3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
-//         [3][ ][ ][ ][ ][ ] =&gt; [ ][3][ ][ ][ ][ ]
-//         [3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
-//         [3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
-//         [3][ ][ ][ ][ ][ ]    [ ][3][ ][ ][ ][ ]
-// [4] - Above Major Diagonal
-//         [ ][4][ ][ ][ ][ ]    [ ][ ][4][ ][ ][ ]
-//         [ ][ ][4][ ][ ][ ]    [ ][ ][ ][4][ ][ ]
-//         [ ][ ][ ][4][ ][ ] =&gt; [ ][ ][ ][ ][4][ ]
-//         [ ][ ][ ][ ][4][ ]    [ ][ ][ ][ ][ ][4]
-//         [ ][ ][ ][ ][ ][4]    [ ][ ][ ][ ][ ][ ]
-//         [ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-// [5] - Below Major Diagonal
-//         [ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-//         [5][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-//         [ ][5][ ][ ][ ][ ] =&gt; [5][ ][ ][ ][ ][ ]
-//         [ ][ ][5][ ][ ][ ]    [ ][5][ ][ ][ ][ ]
-//         [ ][ ][ ][5][ ][ ]    [ ][ ][5][ ][ ][ ]
-//         [ ][ ][ ][ ][5][ ]    [ ][ ][ ][5][ ][ ]
-// [6] - Above Minor Diagonal
-//         [ ][ ][ ][ ][6][ ]    [ ][ ][ ][6][ ][ ]
-//         [ ][ ][ ][6][ ][ ]    [ ][ ][6][ ][ ][ ]
-//         [ ][ ][6][ ][ ][ ] =&gt; [ ][6][ ][ ][ ][ ]
-//         [ ][6][ ][ ][ ][ ]    [6][ ][ ][ ][ ][ ]
-//         [6][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-//         [ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-// [7] - Below Minor Diagonal
-//         [ ][ ][ ][ ][ ][ ]    [ ][ ][ ][ ][ ][ ]
-//         [ ][ ][ ][ ][ ][7]    [ ][ ][ ][ ][ ][ ]
-//         [ ][ ][ ][ ][7][ ] =&gt; [ ][ ][ ][ ][ ][7]
-//         [ ][ ][ ][7][ ][ ]    [ ][ ][ ][ ][7][ ]
-//         [ ][ ][7][ ][ ][ ]    [ ][ ][ ][7][ ][ ]
-//         [ ][7][ ][ ][ ][ ]    [ ][ ][7][ ][ ][ ]
 func IsMutant(size int, dna []string) bool <span class="cov8" title="1">{
-        e := estado{
-                genes:          make([]byte, 8),
-                genesRepetidos: make([]int, 8),
-                mutaciones:     0,
+        s := &amp;state{
+                size:           size,
+                dna:            dna,
+                mutations:      0,
+                mutationsMutex: sync.Mutex{},
+                wg:             sync.WaitGroup{},
         }
-        e.genes[0] = ' '
-        e.genes[1] = ' '
+        dRow := &amp;direction{0, 1}
+        dCol := &amp;direction{1, 0}
+        dMajD := &amp;direction{1, 1}
+        dMinD := &amp;direction{1, -1}
         for i := 0; i &lt; size; i++ </span><span class="cov8" title="1">{
-                e.checkGene(0, dna[i][i])
-                if e.mutante </span><span class="cov8" title="1">{
-                        return true
-                }</span>
-                <span class="cov8" title="1">e.checkGene(1, dna[i][size-1-i])
-                if e.mutante </span><span class="cov8" title="1">{
-                        return true
-                }</span>
-                <span class="cov8" title="1">e.genes[2] = ' '
-                e.genes[3] = ' '
-                for j := 0; j &lt; size; j++ </span><span class="cov8" title="1">{
-                        e.checkGene(2, dna[i][j])
-                        if e.mutante </span><span class="cov8" title="1">{
-                                return true
-                        }</span>
-                        <span class="cov8" title="1">e.checkGene(3, dna[j][i])
-                        if e.mutante </span><span class="cov8" title="1">{
-                                return true
+                s.wg.Add(1)
+                go s.check(i, 0, dRow) // Check each Row
+                // dRow
+                // [i=0]                  [i=1]
+                // [i0][&gt;][&gt;][&gt;][&gt;][&gt;]    [  ][ ][ ][ ][ ][ ]
+                // [  ][ ][ ][ ][ ][ ]    [i0][&gt;][&gt;][&gt;][&gt;][&gt;]
+                // [  ][ ][ ][ ][ ][ ] =&gt; [  ][ ][ ][ ][ ][ ]
+                // [  ][ ][ ][ ][ ][ ]    [  ][ ][ ][ ][ ][ ]
+                // [  ][ ][ ][ ][ ][ ]    [  ][ ][ ][ ][ ][ ]
+                // [  ][ ][ ][ ][ ][ ]    [  ][ ][ ][ ][ ][ ]
+
+                s.wg.Add(1)
+                go s.check(0, i, dCol) // Check each Column
+                // dCol
+                // [i=0]                  [i=1]
+                // [0i][ ][ ][ ][ ][ ]    [ ][0i][ ][ ][ ][ ]
+                // [v ][ ][ ][ ][ ][ ]    [ ][v ][ ][ ][ ][ ]
+                // [v ][ ][ ][ ][ ][ ] =&gt; [ ][v ][ ][ ][ ][ ]
+                // [v ][ ][ ][ ][ ][ ]    [ ][v ][ ][ ][ ][ ]
+                // [v ][ ][ ][ ][ ][ ]    [ ][v ][ ][ ][ ][ ]
+                // [v ][ ][ ][ ][ ][ ]    [ ][v ][ ][ ][ ][ ]
+
+                if i &lt;= size-4 </span><span class="cov8" title="1">{ // if Diagonal has 4 or more elements
+                        s.wg.Add(1)
+                        go s.check(0, i, dMajD) // Check each Major Diagonal starting from [0][0] to [0][size-4]
+                        // dMajD - To right
+                        // [i=0]                  [i=1]
+                        // [i0][ ][ ][ ][ ][ ]    [ ][i0][ ][ ][ ][ ]
+                        // [  ][\][ ][ ][ ][ ]    [ ][  ][\][ ][ ][ ]
+                        // [  ][ ][\][ ][ ][ ] =&gt; [ ][  ][ ][\][ ][ ]
+                        // [  ][ ][ ][\][ ][ ]    [ ][  ][ ][ ][\][ ]
+                        // [  ][ ][ ][ ][\][ ]    [ ][  ][ ][ ][ ][\]
+                        // [  ][ ][ ][ ][ ][\]    [ ][  ][ ][ ][ ][ ]
+
+                        s.wg.Add(1)
+                        go s.check(i, s.size-1, dMinD) // Check each Minor Diagonal starting from [0][size-1] to [size-4][size-1]
+                        // dMinD - To bottom
+                        // [i=0]                  [i=1]
+                        // [ ][ ][ ][ ][ ][i5]    [ ][ ][ ][ ][ ][  ]
+                        // [ ][ ][ ][ ][/][  ]    [ ][ ][ ][ ][ ][i5]
+                        // [ ][ ][ ][/][ ][  ] =&gt; [ ][ ][ ][ ][/][  ]
+                        // [ ][ ][/][ ][ ][  ]    [ ][ ][ ][/][ ][  ]
+                        // [ ][/][ ][ ][ ][  ]    [ ][ ][/][ ][ ][  ]
+                        // [/][ ][ ][ ][ ][  ]    [ ][/][ ][ ][ ][  ]
+                        if i &gt; 0 </span><span class="cov8" title="1">{
+                                s.wg.Add(1)
+                                go s.check(i, 0, dMajD) // Check each Major Diagonal starting from [1][0] to [size-4][0]
+                                // dMajD - To bottom
+                                // [i=1]                  [i=2]
+                                // [  ][ ][ ][ ][ ][ ]    [  ][ ][ ][ ][ ][ ]
+                                // [i0][ ][ ][ ][ ][ ]    [  ][ ][ ][ ][ ][ ]
+                                // [  ][\][ ][ ][ ][ ] =&gt; [i0][ ][ ][ ][ ][ ]
+                                // [  ][ ][\][ ][ ][ ]    [  ][\][ ][ ][ ][ ]
+                                // [  ][ ][ ][\][ ][ ]    [  ][ ][\][ ][ ][ ]
+                                // [  ][ ][ ][ ][\][ ]    [  ][ ][ ][\][ ][ ]
+
+                                s.wg.Add(1)
+                                go s.check(0, s.size-1-i, dMinD) // Check each Minor Diagonal starting from [size-2][0] to [3][0]
+                                // dMinD - To left
+                                // [i=1] =&gt; r=s.size-1-i  [i=2] =&gt; r=s.size-1-i
+                                // [ ][ ][ ][ ][r0][ ]    [ ][ ][ ][r0][ ][ ]
+                                // [ ][ ][ ][/][  ][ ]    [ ][ ][/][  ][ ][ ]
+                                // [ ][ ][/][ ][  ][ ] =&gt; [ ][/][ ][  ][ ][ ]
+                                // [ ][/][ ][ ][  ][ ]    [/][ ][ ][  ][ ][ ]
+                                // [/][ ][ ][ ][  ][ ]    [ ][ ][ ][  ][ ][ ]
+                                // [ ][ ][ ][ ][  ][ ]    [ ][ ][ ][  ][ ][ ]
                         }</span>
                 }
         }
-        <span class="cov8" title="1">for i := 1; i &lt; size-3; i++ </span><span class="cov8" title="1">{
-                e.genes[4] = ' '
-                e.genes[5] = ' '
-                e.genes[6] = ' '
-                e.genes[7] = ' '
-                for j := i; j &lt; size; j++ </span><span class="cov8" title="1">{
-                        e.checkGene(4, dna[j-i][j])
-                        if e.mutante </span><span class="cov8" title="1">{
-                                return true
-                        }</span>
-                        <span class="cov8" title="1">e.checkGene(5, dna[j][j-i])
-                        if e.mutante </span><span class="cov8" title="1">{
-                                return true
-                        }</span>
-                        <span class="cov8" title="1">e.checkGene(6, dna[j-i][(size-1)-(j)])
-                        if e.mutante </span><span class="cov8" title="1">{
-                                return true
-                        }</span>
-                        <span class="cov8" title="1">e.checkGene(7, dna[j][(size-1)-(j-i)])
-                        if e.mutante </span><span class="cov8" title="1">{
-                                return true
-                        }</span>
-                }
-        }
-        <span class="cov8" title="1">return false</span>
+        <span class="cov8" title="1">s.wg.Wait()
+        return s.mutant</span>
 }
 
-func (e *estado) checkGene(gene int, dnaGene byte) <span class="cov8" title="1">{
-        if e.genes[gene] != dnaGene </span><span class="cov8" title="1">{
-                e.genes[gene] = dnaGene
-                e.genesRepetidos[gene] = 0
-        }</span>
-        <span class="cov8" title="1">e.genesRepetidos[gene]++
-        if e.genesRepetidos[gene] &gt;= 4 </span><span class="cov8" title="1">{
-                e.mutaciones++
-                e.genesRepetidos[gene] = 0
-        }</span>
-        <span class="cov8" title="1">if e.mutaciones &gt; 1 </span><span class="cov8" title="1">{
-                e.mutante = true
-        }</span>
+func (s *state) check(startI int, startJ int, dir *direction) <span class="cov8" title="1">{
+        var gene byte = ' '
+        rep := 0
+        for i, j := startI, startJ; i &lt; s.size &amp;&amp; j &lt; s.size &amp;&amp; i &gt;= 0 &amp;&amp; j &gt;= 0 &amp;&amp; !s.mutant; i, j = i+dir.nextI, j+dir.nextJ </span><span class="cov8" title="1">{
+                if gene == s.dna[i][j] </span><span class="cov8" title="1">{
+                        rep++
+                        if rep == 4 </span><span class="cov8" title="1">{
+                                s.mutationsMutex.Lock()
+                                s.mutations++
+                                if s.mutations &gt; 1 </span><span class="cov8" title="1">{
+                                        s.mutant = true
+                                }</span>
+                                <span class="cov8" title="1">s.mutationsMutex.Unlock()
+                                gene = ' '</span>
+                        }
+                } else<span class="cov8" title="1"> {
+                        gene = s.dna[i][j]
+                        rep = 1
+                }</span>
+        }
+        <span class="cov8" title="1">s.wg.Done()</span>
 }
 </pre>
 		

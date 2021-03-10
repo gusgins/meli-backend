@@ -1,0 +1,7 @@
+goos: linux
+goarch: amd64
+pkg: github.com/gusgins/meli-backend/utils
+cpu: Intel(R) Core(TM) i5-9400F CPU @ 2.90GHz
+BenchmarkIsMutant-6   	 1477029	       796.8 ns/op
+PASS
+ok  	github.com/gusgins/meli-backend/utils	11.096s
